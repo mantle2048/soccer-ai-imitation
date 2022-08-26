@@ -1,28 +1,34 @@
 import gym
-import dmc2gym as dmc
-
-from gym.wrappers import NormalizeObservation
-from gym.wrappers import ClipAction
 from gym.spaces import Box
 from typing import Dict
+from gym.wrappers import NormalizeObservation
+from gfootball.env import create_environment
 
-def make_env(env_name: str, env_config: Dict):
-    env_type='dmc' if '_' in env_name else 'gym'
-    seed = env_config['seed']
+from grf_imitation.envs.wrappers import NetEase214Wrapper
 
-    if env_type == 'dmc':
-        domain, task = tuple(env_name.split('_'))
-        env = dmc.make(
-            domain_name=domain,
-            task_name=task,
-            seed=seed,
-            episode_length = episode_length
+def make_env(env_name: str='malib-5vs5', env_config: Dict={}):
+
+    if env_name == 'malib-5vs5':
+        env = create_environment(
+            env_name='malib_5_vs_5',
+            representation='raw',
+            rewards='scoring',
+            write_goal_dumps=False,
+            write_full_episode_dumps=False,
+            render=False,
+            action_set='v2',
+            write_video=False,
+            dump_frequency=1,
+            logdir='',
+            extra_players=None,
+            number_of_left_players_agent_controls=4,
+            number_of_right_players_agent_controls=4,
         )
-        env.action_space.seed(seed)
-    else:
-        env = gym.make(env_name)
-        env.seed(seed)
-        env.action_space.seed(seed)
+    seed = env_config.get('seed', 0)
+    env.seed(seed)
+    env.action_space.seed(seed)
+
+    env = NetEase214Wrapper(env, env_config.get('opponent', 'buildin'))
 
     if isinstance(env.action_space, Box):
         env = ClipAction(env)

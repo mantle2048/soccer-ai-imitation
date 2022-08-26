@@ -14,8 +14,8 @@ class GAILPolicy(PPOPolicy):
         super().__init__(config)
         self.disc_net =  \
             ptu.build_mlp(
-                input_size=self.obs_dim + self.act_dim,
-                output_size=1,
+                input_size=self.obs_dim,
+                output_size=self.act_dim,
                 layers=self.layers,
             )
         self.disc_net.to(ptu.device)
@@ -39,8 +39,8 @@ class GAILPolicy(PPOPolicy):
         pi_obss = ptu.from_numpy(pi_batch.obs)
         pi_acts = ptu.from_numpy(pi_batch.act)
 
-        score_pi = self.disc_net(torch.cat([pi_obss, pi_acts], dim=1))
-        score_exp = self.disc_net(torch.cat([exp_obss, exp_acts], dim=1))
+        score_pi = self._score(pi_obss, pi_acts)
+        score_exp = self._score(exp_obss, exp_acts)
         loss_pi = -F.logsigmoid(-score_pi).mean()
         loss_exp = -F.logsigmoid(score_exp).mean()
         loss_disc = loss_pi + loss_exp
@@ -60,7 +60,13 @@ class GAILPolicy(PPOPolicy):
 
         obs = ptu.from_numpy(obs)
         act = ptu.from_numpy(act)
-        scores = self.disc_net(torch.cat([obs,act], dim=1))
+        scores = self._score(obs, act)
         predictions = -F.logsigmoid(-scores)
         return ptu.to_numpy(predictions)[:, 0]
 
+    def _score(self, obs: torch.Tensor, act: torch.Tensor):
+        return torch.gather(
+            self.disc_net(obs),
+            dim=1,
+            index=act.long().view(-1, 1)
+        )

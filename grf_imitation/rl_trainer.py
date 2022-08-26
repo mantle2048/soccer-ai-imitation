@@ -62,6 +62,7 @@ class RL_Trainer(object):
         print("Env: ", dummy_env)
         print("Observation Dim: ", obs_dim)
         print("Action Dim: ", act_dim)
+        print(f"Using {config.get('opponent').capitalize()} AI Opponent!")
         dummy_env.close()
         del dummy_env
 
@@ -95,7 +96,7 @@ class RL_Trainer(object):
                 num_steps=self.config.get('step_per_itr', None),
             )
             train_batch = self.agent.process_fn(train_batch_list)
-            self.total_envsteps += len(train_batch.rew)
+            self.total_envsteps += len(train_batch.rew) // 4
 
             ## add collected data to replay buffer
             self.agent.add_to_replay_buffer(train_batch)
@@ -149,7 +150,7 @@ class RL_Trainer(object):
         # save eval tabular
         if self.logtabular:
             # returns, for logging
-            eval_returns = [batch["rew"].sum() for batch in eval_batch_list]
+            eval_returns = [batch["rew"].sum() / 4 for batch in eval_batch_list]
 
             # episode lengths, for logging
             eval_ep_lens = [len(batch) for batch in eval_batch_list]

@@ -23,7 +23,7 @@ class OnAgent:
         )
         self.env = self.workers.local_worker().env
         self.policy = self.workers.local_worker().policy
-        self.replay_buffer = ReplayBuffer(config['step_per_itr'])
+        self.replay_buffer = ReplayBuffer(config.get('buffer_size', config['step_per_itr']))
         self.ret_rms = RunningMeanStd()
         self._eps = 1e-8
         self.lr_schedulers = \

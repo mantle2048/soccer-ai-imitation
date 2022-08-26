@@ -138,7 +138,6 @@ def to_hdf5(x: Hdf5ConvertibleType, y: h5py.Group) -> None:
                 ) from exception
             y[k].attrs["__data_type__"] = v.__class__.__name__
 
-
 def from_hdf5(x: h5py.Group, device: Optional[str] = None) -> Hdf5ConvertibleValues:
     """Restore object from HDF5 group."""
     if isinstance(x, h5py.Dataset):

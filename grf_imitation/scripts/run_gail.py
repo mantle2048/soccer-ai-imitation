@@ -11,6 +11,9 @@ def get_parser():
     # GAIL config
     parser.add_argument('--disc-lr', type=float, default=2.5e-5)
     parser.add_argument('--disc-update-num', type=int, default=2)
+    parser.add_argument('--expert', type=str, default='football-bilibili-win')
+    parser.add_argument('--opponent', type=str, default='buildin')
+    parser.add_argument('--buffer-size', type=int, default=5000)
 
     # PPO config
     parser.add_argument('--env-name', type=str, default='CartPole-v1')

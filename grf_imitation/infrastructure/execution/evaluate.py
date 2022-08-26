@@ -17,7 +17,6 @@ from collections import defaultdict
 
 from grf_imitation import algos
 from grf_imitation.user_config import LOCAL_DIR, LOCAL_RENDER_CONFIG
-from grf_imitation.infrastructure.loggers import VideoRecorder
 from grf_imitation.infrastructure.execution import RolloutSaver, synchronous_parallel_sample, WorkerSet 
 from grf_imitation.infrastructure.datas import Batch
 from grf_imitation.infrastructure.utils import utils

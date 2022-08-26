@@ -46,7 +46,6 @@ class PPOPolicy(OnPolicy):
         ) * advs
         surrogate_obj = torch.min(surr1, surr2)
         loss = -torch.mean(surrogate_obj) - self.entropy_coeff * entropy
-
         # Userful extral info
         # Calculate approximate form of reverse KL Divergence for early stopping
         # see issue #417: https://github.com/DLR-RM/stable-baselines3/issues/417

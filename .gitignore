@@ -1,3 +1,5 @@
+.grf/
+.docker_scripts/
 .aim/
 data/
 exp/

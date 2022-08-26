@@ -20,7 +20,6 @@ import time
 import torch
 import tempfile
 
-from .tensorboard_logger import TensorBoardLogger
 from .aim_logger import AimLogger
 from .base_logger import Logger
 from .tabulate import tabulate
@@ -143,8 +142,6 @@ def setup_logger(
     :param base_log_dir:
     :return:
     """
-    # logger = TensorBoardLogger()
-    # logger = Logger()
     logger = AimLogger()
     log_dir = create_log_dir(
         exp_prefix, base_log_dir=base_log_dir, **create_log_dir_kwargs
