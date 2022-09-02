@@ -25,13 +25,16 @@ class OnPolicy(nn.Module):
         self.entropy_coeff = config['entropy_coeff']
         self.grad_clip = config['grad_clip']
         self.epsilon = config['epsilon']
+        self.activation = config['activation']
         self.optimizers = {}
 
         # discrete or continus
         if self.discrete:
             self.logits_net = ptu.build_mlp(input_size=self.obs_dim,
                                             output_size=self.act_dim,
-                                            layers=self.layers)
+                                            layers=self.layers,
+                                            activation=self.activation
+                                            )
             self.logits_net.to(ptu.device)
             self.mean_net = None
             self.logstd = None
@@ -43,6 +46,7 @@ class OnPolicy(nn.Module):
             self.mean_net = ptu.build_mlp(input_size=self.obs_dim,
                                             output_size=self.act_dim,
                                             layers=self.layers,
+                                            activation=self.activation
                                           )
             self.logstd = nn.Parameter(
                     -0.5 * torch.ones(self.act_dim, dtype=torch.float32, device=ptu.device))
@@ -125,8 +129,9 @@ class OnPolicy(nn.Module):
             Output: np.ndarray of size [N]
         """
         obs = ptu.from_numpy(obs)
-        predictions = self.baseline(obs)
-        return ptu.to_numpy(predictions)[:, 0]
+        batch_size, n_player, obs_dim = obs.shape
+        predictions = self.baseline(obs.view(-1, obs_dim))
+        return ptu.to_numpy(predictions.view(-1, n_player))
 
     def save(self, filepath=None):
         torch.save(self.state_dict(), filepath)

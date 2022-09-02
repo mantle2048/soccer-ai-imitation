@@ -17,7 +17,8 @@ class GAILPolicy(PPOPolicy):
                 input_size=self.obs_dim,
                 output_size=self.act_dim,
                 layers=self.layers,
-            )
+                activation=self.activation
+                )
         self.disc_net.to(ptu.device)
         self.disc_net.apply(ptu.init_weights)
         ptu.scale_last_layer(self.disc_net)
@@ -62,11 +63,13 @@ class GAILPolicy(PPOPolicy):
         act = ptu.from_numpy(act)
         scores = self._score(obs, act)
         predictions = -F.logsigmoid(-scores)
-        return ptu.to_numpy(predictions)[:, 0]
+        return ptu.to_numpy(predictions)
 
     def _score(self, obs: torch.Tensor, act: torch.Tensor):
-        return torch.gather(
-            self.disc_net(obs),
+        batch_size, n_player, obs_dim = obs.shape
+        scores = torch.gather(
+            self.disc_net(obs.view(-1, obs_dim)),
             dim=1,
             index=act.long().view(-1, 1)
         )
+        return scores.view(-1, n_player)

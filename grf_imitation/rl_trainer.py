@@ -59,10 +59,6 @@ class RL_Trainer(object):
         act_dim = dummy_env.action_space.n if discrete else dummy_env.action_space.shape[0]
         self.config['policy_config']['obs_dim'] = obs_dim
         self.config['policy_config']['act_dim'] = act_dim
-        print("Env: ", dummy_env)
-        print("Observation Dim: ", obs_dim)
-        print("Action Dim: ", act_dim)
-        print(f"Using {config.get('opponent').capitalize()} AI Opponent!")
         dummy_env.close()
         del dummy_env
 
@@ -71,7 +67,15 @@ class RL_Trainer(object):
         #############
         agent_class = self.config['agent_class']
         self.agent = agent_class(self.config)
-        print("Lr Scheduler: ", self.agent.lr_schedulers)
+        self.logger.log("Expert Buffer: ", end='', with_prefix=False)
+        self.logger.log(f"obs: {self.agent.expert_buffer.obs.shape}", end=' ', with_prefix=False)
+        self.logger.log(f"act: {self.agent.expert_buffer.act.shape}", with_prefix=False)
+        self.logger.log(f"Env: {self.agent.env}", with_prefix=False)
+        self.logger.log(f"Observation Dim: {obs_dim}", with_prefix=False)
+        self.logger.log(f"Action Dim: {act_dim}", with_prefix=False)
+        self.logger.log(f"Using {config.get('opponent').capitalize()} AI Opponent!", with_prefix=False)
+        self.logger.log(f"Agent: {self.agent.policy}", with_prefix=False)
+        self.logger.log(f"Lr Scheduler: {self.agent.lr_schedulers}", with_prefix=False)
 
     ####################################
     ####################################
@@ -96,7 +100,7 @@ class RL_Trainer(object):
                 num_steps=self.config.get('step_per_itr', None),
             )
             train_batch = self.agent.process_fn(train_batch_list)
-            self.total_envsteps += len(train_batch.rew) // 4
+            self.total_envsteps += len(train_batch.rew)
 
             ## add collected data to replay buffer
             self.agent.add_to_replay_buffer(train_batch)
@@ -135,18 +139,6 @@ class RL_Trainer(object):
         print("\nCollecting rollouts for eval...")
         eval_batch_list = evaluate(self.agent, num_episodes=10)
 
-        # save eval rollouts as videos
-        if self.logvideo:
-            print('\nCollecting and saving video rollouts')
-            video_batch_list = evaluate(agent=self.agent, num_episodes=MAX_NVIDEO, render=True)
-            ## save train/eval videos
-            print('\nSaving rollouts as videos...')
-            self.logger.log_paths_as_videos(
-                video_batch_list, itr, video_title='rollouts'
-            )
-
-        #######################
-
         # save eval tabular
         if self.logtabular:
             # returns, for logging
@@ -166,6 +158,18 @@ class RL_Trainer(object):
             self.logger.record_dict(train_log)
 
             self.logger.dump_tabular(with_prefix=True, with_timestamp=False)
+
+        # save eval rollouts as videos
+        if self.logvideo:
+            print('\nCollecting and saving video rollouts')
+            video_batch_list = evaluate(agent=self.agent, num_episodes=MAX_NVIDEO, render=True)
+            ## save train/eval videos
+            print('\nSaving rollouts as videos...')
+            self.logger.log_paths_as_videos(
+                video_batch_list, itr, video_title='rollouts'
+            )
+
+        #######################
 
     def _refresh_logger_flags(self, itr):
 

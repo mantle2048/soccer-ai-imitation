@@ -55,10 +55,6 @@ class OnAgent:
         self.replay_buffer.add_batch(batch)
 
     def get_statistics(self):
-        # statistics = {}
-        # if self.config.get('obs_norm'):
-        #     statistics.update(ray.get(self.workers.remote_workers()[0].get_statistics.remote()))
-        # return statistics
         return self.workers.local_worker().get_statistics()
 
     def set_statistics(self, statistics: Dict):

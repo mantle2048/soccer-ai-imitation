@@ -10,9 +10,6 @@ def load_grf_dataset(expert: str) -> 'ReplayBuffer':
     print(f'Loading dateset from {dataset_path}')
     with h5py.File(dataset_path, 'r') as f:
         data_dict = from_hdf5(f)
-    data_dict['obs'] = data_dict['obs'][:150000]
-    data_dict['act'] = data_dict['act'][:150000]
     return ReplayBuffer.from_data(
-        obs=data_dict['obs'].transpose(1, 0, 2).reshape(-1, 214),
-        act=data_dict['act'].T.flatten()
+        obs=data_dict['obs'], act=data_dict['act']
     )

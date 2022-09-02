@@ -7,6 +7,11 @@ from grf_imitation.algos import PPOAgent
 
 def get_parser():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--opponent', type=str, default='buildin')
+    parser.add_argument('--score-cut', action='store_true')
+    parser.add_argument('--extra-buildin-act', action='store_true')
+
     parser.add_argument('--env-name', type=str, default='CartPole-v1')
     parser.add_argument('--no-gpu', action='store_true')
     parser.add_argument('--which-gpu', default=0)
@@ -27,6 +32,7 @@ def get_parser():
     parser.add_argument('--gae-lambda', type=float, default=None)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--layers', '-l', nargs='+', type=int, default=[64,64])
+    parser.add_argument('--activation', type=str, default="tanh")
     parser.add_argument('--epsilon', type=float, default=0.2)
     parser.add_argument("--recompute-adv", action='store_true')
     parser.add_argument("--ret-norm", action='store_true')
@@ -49,6 +55,7 @@ def get_config(args: argparse.Namespace) -> Dict:
     policy_config = {
         'policy_name': args.policy_name,
         'layers': args.layers,
+        'activation': args.activation,
         'lr': args.lr,
         'lr_schedule': args.lr_schedule,
         'epsilon': args.epsilon,
@@ -68,6 +75,7 @@ def get_config(args: argparse.Namespace) -> Dict:
         'env_name': args.env_name,
         'obs_norm': args.obs_norm,
         'seed': args.seed,
+        'opponent': args.opponent,
     }
 
     agent_config = vars(args)

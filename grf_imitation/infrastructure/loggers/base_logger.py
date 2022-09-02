@@ -167,7 +167,7 @@ class Logger(object):
     def get_log_tabular_only(self, ):
         return self._log_tabular_only
 
-    def log(self, s, with_prefix=True, with_timestamp=False):
+    def log(self, s, end='\n', with_prefix=True, with_timestamp=False):
         out = s
         if with_prefix:
             out = self._prefix_str + out
@@ -177,9 +177,9 @@ class Logger(object):
             out = "%s | %s" % (timestamp, out)
         if not self._log_tabular_only:
             # Also log to stdout
-            print(out)
+            print(out, end=end)
             for fd in list(self._text_fds.values()):
-                fd.write(out + '\n')
+                fd.write(out + end)
                 fd.flush()
             sys.stdout.flush()
 
@@ -243,8 +243,8 @@ class Logger(object):
         self.pop_tabular_prefix()
 
     def log_variant(self, file_name, variant_data, mode='a'):
-        self.log(f"{file_name}:")
-        self.log(f"{variant_data}")
+        self.log(f"{file_name}:", with_prefix=False)
+        self.log(f"{variant_data}", with_prefix=False)
         file_name = osp.join(self._snapshot_dir, file_name)
         mkdir_p(os.path.dirname(file_name))
         with open(file_name, mode) as f:

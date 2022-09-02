@@ -7,7 +7,7 @@ from grf_imitation.envs.feature_encoder import MyFeatureEncoder
 
 class NetEase214Wrapper(gym.Wrapper):
 
-    def __init__(self, env: gym.Env, opponent: str='static'):
+    def __init__(self, env: gym.Env, env_config: Dict):
         super().__init__(env)
 
         # observation process
@@ -16,12 +16,17 @@ class NetEase214Wrapper(gym.Wrapper):
         self.feature_encoder = MyFeatureEncoder()
 
         # action process
-        self.action_space = gym.spaces.Discrete(19) # remove build-ai action
-        assert opponent in ('buildin', 'random', 'static'), f"Not Supported AI type: {opponet}"
-        self.opponent = opponent
+        if env_config.get('extra_buildin_act'):
+            self.action_space = gym.spaces.Discrete(20) # add build-ai action
+        else:
+            self.action_space = gym.spaces.Discrete(19) # remove build-ai action
+
+        # choose the opponent
+        self.opponent = env_config.get('opponent')
+        assert self.opponent in ('buildin', 'random', 'static', 'selfplay'), f"Not Supported AI type: {self.opponent}"
 
         # step set
-        self.max_episode_steps = 3000
+        self.max_episode_steps = env_config.get('ep_len')
         self._step = 0
 
     def reset(self, **kwargs):
@@ -45,6 +50,8 @@ class NetEase214Wrapper(gym.Wrapper):
             oppo_act = np.array([19, 19, 19, 19])
         elif self.opponent == 'random':
             oppo_act = np.random.randint(0, 19, (4,))
+        elif self.opponent == 'selfplay':
+            oppo_act = act.copy()
         else:
             # static opponent
             oppo_act = np.array([0, 0, 0, 0])

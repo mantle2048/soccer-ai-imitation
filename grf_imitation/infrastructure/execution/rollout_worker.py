@@ -152,16 +152,19 @@ class RolloutWorker:
         step_list = []
         env, policy = self.env, self.policy
         while step < sample_step:
-            terminal = False
+            step += 1
+            terminal, truncated = False, False
             act = policy.get_action(self._cur_obs)
             next_obs, rew, done, info = env.step(act)
             self._cur_eprew += rew
             self._cur_eplen += 1
-            if done and self._cur_eplen != self.max_step:
-                terminal = True
+            if done:
+                if self._cur_eplen != self.max_step: terminal = True
+                else: truncated = True
+            if step == sample_step: truncated = True
             step_return = Batch(
-                obs=self._cur_obs, act=act, next_obs=next_obs,
-                rew=rew, done=done, info=info, terminal=terminal,
+                obs=self._cur_obs, act=act, next_obs=next_obs, rew=rew,
+                done=done, info=info, terminal=terminal, truncated=truncated,
                 ep_len=self._cur_eplen, ep_rew=self._cur_eprew,
             )
             step_list.append(step_return)
@@ -171,7 +174,6 @@ class RolloutWorker:
                 self._cur_eprew = 0.
             else:
                 self._cur_obs = next_obs
-            step += 1
         batch = Batch.stack(step_list)
         return batch
 
@@ -179,20 +181,21 @@ class RolloutWorker:
         step_list = []
         env, policy = self.eval_env, self.policy
         ep_rew, ep_len, step_list = 0.0, 0, []
-        done, terminal = False, False
+        done, terminal, truncated = False, False, False
         obs = env.reset()
         while not done:
             act = policy.get_action(obs)
             next_obs, rew, done, info = env.step(act)
             ep_rew += rew
             ep_len += 1
-            if done and ep_len != self.max_step:
-                terminal = True
+            if done:
+                if ep_len != self.max_step: terminal = True
+                else: truncated = True
             step_return = Batch(
                 obs=obs, act=act, next_obs=next_obs,
                 rew=rew, done=done, info=info,
                 ep_len=ep_len, ep_rew=ep_rew,
-                terminal=terminal
+                terminal=terminal, truncated=truncated
             )
             step_list.append(step_return)
             obs = next_obs

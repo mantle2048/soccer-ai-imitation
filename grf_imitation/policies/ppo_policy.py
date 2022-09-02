@@ -64,8 +64,8 @@ class PPOPolicy(OnPolicy):
             nn.utils.clip_grad_norm_(self.parameters(), self.grad_clip)
         self.optimizer.step()
 
-        targets = ptu.from_numpy(batch.returns)
-        baseline_preds = self.baseline(obss).flatten()
+        targets = ptu.from_numpy(batch.ret)
+        baseline_preds = self.baseline(obss).squeeze()
 
         ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
         ## [ N ] versus shape [ N x 1 ]

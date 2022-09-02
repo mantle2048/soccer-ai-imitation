@@ -16,9 +16,6 @@ class GAILAgent(PPOAgent):
     def __init__(self, config: Dict):
         super().__init__(config)
         self.expert_buffer = load_grf_dataset(config.get('expert'))
-        print("Expert Buffer: ", end='')
-        print("obs: ", self.expert_buffer.obs.shape, end='')
-        print("act: ", self.expert_buffer.act.shape)
         self.disc_update_num = config.setdefault('disc_update_num', 4)
 
     def process_fn(self, batch: Union[List[Batch], Batch]) -> Batch:
@@ -28,6 +25,7 @@ class GAILAgent(PPOAgent):
         batch = self.get_rew(batch)
         batch = super().process_fn(batch)
         return batch
+
     def train(self, batch_size: int, repeat: int) -> Dict:
 
         disc_train_log = {}
@@ -48,15 +46,12 @@ class GAILAgent(PPOAgent):
         return batch
 
     def _football_process_fn(self, batch: Batch) -> Batch:
+        n_player = batch.obs.shape[1]
         for k in batch.keys():
-            if k in ('obs', 'next_obs'):
-                batch[k] = batch[k].transpose(1, 0, 2).reshape(-1, 214)
-            elif k in ('act', 'rew', 'ep_rew'):
-                batch[k] = batch[k].T.flatten()
-            elif k in ('done', 'eps_id', 'ep_len', 'terminal'):
-                batch[k] = np.tile(batch[k], 4)
-        # Score of our side or opponent side, cut the rollout, but not reset
-        indices = np.nonzero(batch.rew)
-        batch.done[indices] = True
-        batch.terminal[indices] = True
+            if k in ('ep_len', 'terminal', 'truncated'):
+                batch[k] = np.repeat(batch[k], n_player).reshape(-1, n_player)
+        if self.config['score_cut']:
+            indices = np.nonzero(batch.rew[:, 0])[0]
+            batch.done[indices] = True
+            batch.terminal[indices] = True
         return batch

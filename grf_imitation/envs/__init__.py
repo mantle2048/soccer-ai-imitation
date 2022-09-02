@@ -28,7 +28,7 @@ def make_env(env_name: str='malib-5vs5', env_config: Dict={}):
     env.seed(seed)
     env.action_space.seed(seed)
 
-    env = NetEase214Wrapper(env, env_config.get('opponent', 'buildin'))
+    env = NetEase214Wrapper(env, env_config)
 
     if isinstance(env.action_space, Box):
         env = ClipAction(env)

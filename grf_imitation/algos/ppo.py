@@ -28,12 +28,12 @@ class PPOAgent(OnAgent):
 
     def get_returns_and_advs(self, batch: Batch) -> Batch:
         obss, next_obss, rews = batch.obs, batch.next_obs, batch.rew
-        dones, terminals = batch.done.copy(), batch.terminal.copy()
+        truncations, terminals = batch.truncated.copy(), batch.terminal.copy()
         returns, advs = self.estimate_returns_and_advantages(
             obss, next_obss,
-            rews, dones, terminals
+            rews, truncations, terminals
         )
-        batch['returns'] = returns
+        batch['ret'] = returns
         batch['adv'] = advs
         return batch
 
@@ -69,7 +69,7 @@ class PPOAgent(OnAgent):
         obss: np.ndarray,
         next_obss: np.ndarray,
         rews: np.ndarray,
-        dones: np.ndarray,
+        truncations: np.ndarray,
         terminals: np.ndarray
     )-> Tuple[np.ndarray, np.ndarray]:
         obss_v = self.policy.run_baseline_prediction(obss)
@@ -79,14 +79,12 @@ class PPOAgent(OnAgent):
             next_obss_v = next_obss_v * np.sqrt(self.ret_rms.var + self._eps)
         # Value mask
         next_obss_v[terminals] = 0.0
-        # truncted episode
-        dones[-1] = True
         advs = _gae_return(
             obss_v, next_obss_v,
-            rews, dones,
+            rews, truncations + terminals,
             self.gamma, self.gae_lambda
         )
-        unnormalized_returns = advs + obss_v # λ return
+        unnormalized_returns = advs + obss_v # lambda return
         if self.ret_norm:
             returns = unnormalized_returns / np.sqrt(self.ret_rms.var + self._eps)
             self.ret_rms.update(unnormalized_returns)
@@ -94,7 +92,6 @@ class PPOAgent(OnAgent):
             returns = unnormalized_returns
         return returns, advs
 
-@njit
 def _gae_return(
     v_s: np.ndarray,
     v_s_: np.ndarray,
@@ -106,7 +103,10 @@ def _gae_return(
     returns = np.zeros(rew.shape)
     delta = rew + v_s_ * gamma - v_s
     discount = (1.0 - end_flag) * (gamma * gae_lambda)
-    gae = 0.0
+    if len(rew.shape) > 1:
+        gae = np.zeros(rew.shape[-1])
+    else:
+        gae = 0.0
     for i in range(len(rew) - 1, -1, -1):
         gae = delta[i] + discount[i] * gae
         returns[i] = gae
