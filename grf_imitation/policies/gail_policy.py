@@ -14,8 +14,8 @@ class GAILPolicy(PPOPolicy):
         super().__init__(config)
         self.disc_net =  \
             ptu.build_mlp(
-                input_size=self.obs_dim,
-                output_size=self.act_dim,
+                input_size=self.obs_dim + self.act_dim,
+                output_size=1,
                 layers=self.layers,
                 activation=self.activation
                 )
@@ -66,10 +66,17 @@ class GAILPolicy(PPOPolicy):
         return ptu.to_numpy(predictions)
 
     def _score(self, obs: torch.Tensor, act: torch.Tensor):
+        # batch_size, n_player, obs_dim = obs.shape
+        # one_hot_act = F.one_hot(act.long(), num_classes=self.act_dim)
+        # scores = self.disc_net(torch.cat([obs, one_hot_act], dim=1))
+        # scores = torch.gather(
+        #     self.disc_net(obs.view(-1, obs_dim)),
+        #     dim=1,
+        #     index=act.long().view(-1, 1)
+        # )
+
         batch_size, n_player, obs_dim = obs.shape
-        scores = torch.gather(
-            self.disc_net(obs.view(-1, obs_dim)),
-            dim=1,
-            index=act.long().view(-1, 1)
-        )
+        one_hot_act = F.one_hot(act.flatten().long(), num_classes=self.act_dim)
+        scores = self.disc_net(torch.cat([obs.view(-1, obs_dim), one_hot_act], dim=1))
+        
         return scores.view(-1, n_player)
