@@ -46,12 +46,16 @@ class GAILAgent(PPOAgent):
         return batch
 
     def _football_process_fn(self, batch: Batch) -> Batch:
-        n_player = batch.obs.shape[1]
+        n_player, obs_dim = batch.obs.shape[1], batch.obs.shape[-1]
         for k in batch.keys():
-            if k in ('ep_len', 'terminal', 'truncated'):
-                batch[k] = np.repeat(batch[k], n_player).reshape(-1, n_player)
+            if k in ('obs', 'next_obs'):
+                batch[k] = batch[k].transpose(1, 0, 2).reshape(-1, obs_dim)
+            elif k in ('act', 'rew', 'ep_rew'):
+                batch[k] = batch[k].T.flatten()
+            elif k in ('done', 'eps_id', 'ep_len', 'terminal', 'truncated'):
+                batch[k] = np.tile(batch[k], 4)
         if self.config['score_cut']:
-            indices = np.nonzero(batch.rew[:, 0])[0]
+            indices = np.nonzero(batch.rew)
             batch.done[indices] = True
             batch.terminal[indices] = True
         return batch

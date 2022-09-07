@@ -5,14 +5,14 @@ from typing import Dict, Union, List
 
 from grf_imitation.envs.feature_encoder import MyFeatureEncoder
 
-class NetEase214Wrapper(gym.Wrapper):
+class NetEase41Wrapper(gym.Wrapper):
 
     def __init__(self, env: gym.Env, env_config: Dict):
         super().__init__(env)
 
         # observation process
         self.observation_space =  \
-            Box(low=-np.inf, high=np.inf, shape=(214,), dtype=np.float32)
+            Box(low=-np.inf, high=np.inf, shape=(41,), dtype=np.float32)
         self.feature_encoder = MyFeatureEncoder()
 
         # action process

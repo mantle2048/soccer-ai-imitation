@@ -129,9 +129,8 @@ class OnPolicy(nn.Module):
             Output: np.ndarray of size [N]
         """
         obs = ptu.from_numpy(obs)
-        batch_size, n_player, obs_dim = obs.shape
-        predictions = self.baseline(obs.view(-1, obs_dim))
-        return ptu.to_numpy(predictions.view(-1, n_player))
+        predictions = self.baseline(obs)
+        return ptu.to_numpy(predictions[:, 0])
 
     def save(self, filepath=None):
         torch.save(self.state_dict(), filepath)

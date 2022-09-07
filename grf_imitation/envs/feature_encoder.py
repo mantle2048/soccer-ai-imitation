@@ -126,228 +126,36 @@ class MyFeatureEncoder:
     def encode(self, obs):
         player_num = obs["active"]
 
-        player_pos_x, player_pos_y = obs["left_team"][player_num]
-        player_direction = np.array(obs["left_team_direction"][player_num])
-        player_speed = np.linalg.norm(player_direction)
-        player_role = obs["left_team_roles"][player_num]
-        player_role_onehot = self._encode_role_onehot(player_role)
-        player_tired = obs["left_team_tired_factor"][player_num]
-        is_dribbling = obs["sticky_actions"][9]
-        is_sprinting = obs["sticky_actions"][8]
+        left_team_pos = obs['left_team'][1:].flatten()
 
-        ball_x, ball_y, ball_z = obs["ball"]
-        ball_x_relative = ball_x - player_pos_x
-        ball_y_relative = ball_y - player_pos_y
-        ball_x_speed, ball_y_speed, _ = obs["ball_direction"]
-        ball_distance = np.linalg.norm([ball_x_relative, ball_y_relative])
-        ball_speed = np.linalg.norm([ball_x_speed, ball_y_speed])
-        ball_owned = 0.0
-        if obs["ball_owned_team"] == -1:
-            ball_owned = 0.0
-        else:
-            ball_owned = 1.0
-        ball_owned_by_us = 0.0
-        if obs["ball_owned_team"] == 0:
-            ball_owned_by_us = 1.0
-        elif obs["ball_owned_team"] == 1:
-            ball_owned_by_us = 0.0
-        else:
-            ball_owned_by_us = 0.0
+        left_team_direct = obs['left_team_direction'][1:].flatten()
 
-        ball_which_zone = self._encode_ball_which_zone(ball_x, ball_y)
+        ball_pos = obs['ball']
 
-        if ball_distance > 0.03:
-            ball_far = 1.0
-        else:
-            ball_far = 0.0
+        ball_direct = obs['ball_direction']
 
-        avail = self._get_avail_new(obs, ball_distance)
-        # avail = self._get_avail(obs, ball_distance)
-        player_state = np.concatenate(
-            (
-                # avail[2:],
-                obs["left_team"][player_num],
-                player_direction * 100,
-                [player_speed * 100],
-                player_role_onehot,
-                [ball_far, player_tired, is_dribbling, is_sprinting],
-            )
-        )
+        ball_own_team_idx = obs['ball_owned_team']
+        ball_own_team = np.array([0, 0, 0])
+        ball_own_team[ball_own_team_idx] = 1
 
-        player_history_state = np.concatenate(
-            (
-                obs["left_team"][player_num],
-                player_direction * 100,
-                [player_speed * 100],
-                player_role_onehot,
-                [ball_far, player_tired, is_dribbling, is_sprinting],
-            )
-        )
+        ball_own_player_idx = obs['ball_owned_player']
+        ball_own_player = np.array([0, 0, 0, 0, 0, 0])
+        ball_own_player[ball_own_player_idx] = 1
 
-        ball_state = np.concatenate(
-            (
-                np.array(obs["ball"]),
-                np.array(ball_which_zone),
-                np.array([ball_x_relative, ball_y_relative]),
-                np.array([obs["ball_direction"][0] * 20, obs["ball_direction"][1] * 20, obs["ball_direction"][2] * 5]),
-                np.array(
-                    [ball_speed * 20, ball_distance, ball_owned, ball_owned_by_us]
-                ),
-            )
-        )
-
-        obs_left_team = np.delete(obs["left_team"], player_num, axis=0)
-        obs_left_relatvie = obs_left_team - obs["left_team"][player_num]
-        obs_left_team_direction = np.delete(
-            obs["left_team_direction"], player_num, axis=0
-        )
-        left_team_distance = np.linalg.norm(
-            obs_left_team - obs["left_team"][player_num], axis=1, keepdims=True
-        )
-        left_team_speed = np.linalg.norm(obs_left_team_direction, axis=1, keepdims=True)
-        left_team_tired = np.delete(
-            obs["left_team_tired_factor"], player_num, axis=0
-        ).reshape(-1, 1)
-        left_team_state = np.concatenate(
-            (
-                obs_left_team,
-                obs_left_relatvie * 2,
-                obs_left_team_direction * 100,
-                left_team_speed * 100,
-                left_team_distance,
-                left_team_tired,
-            ),
-            axis=1,
-        )
-        left_closest_idx = np.argmin(left_team_distance)
-        left_closest_state = left_team_state[left_closest_idx]
-
-        left_team_history_state = np.concatenate(
-            (
-                obs_left_team,
-                obs_left_relatvie * 2,
-                obs_left_team_direction * 100,
-                left_team_speed * 100,
-                left_team_distance,
-            ),
-            axis=1,
-        )
-
-        obs_right_team = np.array(obs["right_team"])
-        obs_right_relative = obs_right_team - obs["left_team"][player_num]
-        obs_right_team_direction = np.array(obs["right_team_direction"])
-        right_team_distance = np.linalg.norm(
-            obs_right_team - obs["left_team"][player_num], axis=1, keepdims=True
-        )
-        right_team_speed = np.linalg.norm(
-            obs_right_team_direction, axis=1, keepdims=True
-        )
-        right_team_tired = np.array(obs["right_team_tired_factor"]).reshape(-1, 1)
-        right_team_state = np.concatenate(
-            (
-                obs_right_team,
-                obs_right_relative * 2,
-                obs_right_team_direction * 100,
-                right_team_speed * 100,
-                right_team_distance,
-                right_team_tired,
-            ),
-            axis=1,
-        )
-        right_closest_idx = np.argmin(right_team_distance)
-        right_closest_state = right_team_state[right_closest_idx]
-
-        right_team_history_state = np.concatenate(
-            (
-                obs_right_team,
-                obs_right_relative * 2,
-                obs_right_team_direction * 100,
-                right_team_speed * 100,
-                right_team_distance,
-            ),
-            axis=1,
-        )
-
-        steps_left = obs['steps_left']  # steps left till end
-        half_steps_left = steps_left
-        if half_steps_left > 1500:
-            half_steps_left -= 1501  # steps left till halfend
-        half_steps_left = 1.0 * min(half_steps_left, 300.0)  # clip
-        half_steps_left /= 300.0
-
-        score_ratio = 1.0 * (obs['score'][0] - obs['score'][1])
-        score_ratio /= 5.0
-        score_ratio = min(score_ratio, 1.0)
-        score_ratio = max(-1.0, score_ratio)
-
-        game_mode = np.zeros(7, dtype=np.float32)
-        game_mode[obs['game_mode']] = 1
-        match_state = np.concatenate(
-            (
-                np.array([1.0 * steps_left / 3001, half_steps_left, score_ratio]),
-                game_mode
-            )
-        )
-
-        # offside
-        l_o, r_o = self.get_offside(obs)
-        offside = np.concatenate(
-            (
-                l_o,
-                r_o
-            )
-        )
-
-        # card
-        card = np.concatenate(
-            (
-                obs['left_team_yellow_card'],
-                obs['left_team_active'],
-                obs['right_team_yellow_card'],
-                obs['right_team_active']
-            )
-        )
-
-        # sticky_action
-        sticky_action = obs['sticky_actions']
-
-        # ball_distance
-        left_team_distance = np.linalg.norm(
-            obs_left_team - obs["ball"][:2], axis=1, keepdims=False
-        )
-        right_team_distance = np.linalg.norm(
-            obs_right_team - obs["ball"][:2], axis=1, keepdims=False
-        )
-        ball_distance = np.concatenate(
-            (
-                left_team_distance,
-                right_team_distance
-            )
-        )
+        player_role_idx = obs['left_team_roles'][player_num]
+        player_role = np.zeros(10)
+        player_role[player_role_idx] = 1
 
         state_dict = {
-            "player": player_state,
-            "ball": ball_state,
-            "left_team": left_team_state,
-            "left_closest": left_closest_state,
-            "right_team": right_team_state,
-            "right_closest": right_closest_state,
-            "avail": avail,
-            "match_state": match_state,
-            "offside": offside,
-            "card": card,
-            "sticky_action": sticky_action,
-            "ball_distance": ball_distance
+            'player_role': player_role,
+            'players_pos': left_team_pos,
+            'players_direct': left_team_direct,
+            'ball_pos': ball_pos,
+            'ball_direct': ball_direct,
+            'ball_own_team': ball_own_team,
+            'ball_own_player': ball_own_player,
         }
-
-        history_state_dict = {
-            "player": player_history_state,
-            "ball": ball_state,
-            "left_team": left_team_history_state,
-            "right_team": right_team_history_state,
-            "offside": offside,
-            "ball_distance": ball_distance
-        }
+        history_state_dict = {}
 
         return state_dict, history_state_dict
 
