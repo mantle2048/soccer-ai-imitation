@@ -62,7 +62,8 @@ class OnPolicy(nn.Module):
         self.baseline = ptu.build_mlp(
             input_size=self.obs_dim,
             output_size=1,
-            layers=self.layers
+            activation=self.activation,
+            layers=self.layers,
         )
         self.baseline.to(ptu.device)
         self.baseline_optimizer = optim.Adam(

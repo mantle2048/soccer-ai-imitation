@@ -5,14 +5,14 @@ from typing import Dict, Union, List
 
 from grf_imitation.envs.feature_encoder import MyFeatureEncoder
 
-class NetEase41Wrapper(gym.Wrapper):
+class NetEase214Wrapper(gym.Wrapper):
 
     def __init__(self, env: gym.Env, env_config: Dict):
         super().__init__(env)
 
         # observation process
         self.observation_space =  \
-            Box(low=-np.inf, high=np.inf, shape=(41,), dtype=np.float32)
+            Box(low=-np.inf, high=np.inf, shape=(214,), dtype=np.float32)
         self.feature_encoder = MyFeatureEncoder()
 
         # action process
@@ -23,7 +23,12 @@ class NetEase41Wrapper(gym.Wrapper):
 
         # choose the opponent
         self.opponent = env_config.get('opponent')
-        assert self.opponent in ('buildin', 'random', 'static', 'selfplay'), f"Not Supported AI type: {self.opponent}"
+        assert self.opponent in (
+            'buildin',
+            'random',
+            'static',
+            'selfplay',
+        ), f"Not Supported AI type: {self.opponent}"
 
         # step set
         self.max_episode_steps = env_config.get('ep_len')

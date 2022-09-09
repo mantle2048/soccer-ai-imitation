@@ -21,7 +21,6 @@ class GAILPolicy(PPOPolicy):
                 )
         self.disc_net.to(ptu.device)
         self.disc_net.apply(ptu.init_weights)
-        ptu.scale_last_layer(self.disc_net)
         self.disc_optimizer = optim.Adam(
             self.disc_net.parameters(),
             self.config.get('disc_lr'),
@@ -71,8 +70,7 @@ class GAILPolicy(PPOPolicy):
             dim=1,
             index=act.long().view(-1, 1)
         )
-        # batch_size, n_player, obs_dim = obs.shape
-        # one_hot_act = F.one_hot(act.flatten().long(), num_classes=self.act_dim)
-        # scores = self.disc_net(torch.cat([obs.view(-1, obs_dim), one_hot_act], dim=1))
-        
+        # one_hot_act = F.one_hot(act.long(), num_classes=19)
+        # scores = self.disc_net(torch.cat([obs, one_hot_act], dim=1))
         return scores[:, 0]
+

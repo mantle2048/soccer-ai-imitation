@@ -100,7 +100,7 @@ class RL_Trainer(object):
                 num_steps=self.config.get('step_per_itr', None),
             )
             train_batch = self.agent.process_fn(train_batch_list)
-            self.total_envsteps += len(train_batch.rew)
+            self.total_envsteps += len(train_batch.done) // 4
 
             ## add collected data to replay buffer
             self.agent.add_to_replay_buffer(train_batch)
