@@ -47,7 +47,9 @@ def synchronous_parallel_sample(
                 surplus_steps = max_steps - steps
                 if surplus_steps < len(batch):
                     batch = batch[:surplus_steps]
-                    batch.truncated[-1] = True
+                    truncated = batch.truncated.copy()
+                    truncated[-1] = True
+                    batch['truncated'] = truncated.copy()
                 batch_list.append(batch)
                 steps += len(batch)
                 if steps >= max_steps: break

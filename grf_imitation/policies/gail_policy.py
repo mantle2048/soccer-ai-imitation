@@ -73,4 +73,3 @@ class GAILPolicy(PPOPolicy):
         # one_hot_act = F.one_hot(act.long(), num_classes=19)
         # scores = self.disc_net(torch.cat([obs, one_hot_act], dim=1))
         return scores[:, 0]
-

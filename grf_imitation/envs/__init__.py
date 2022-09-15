@@ -4,7 +4,7 @@ from typing import Dict
 from gym.wrappers import NormalizeObservation
 from gfootball.env import create_environment
 
-from grf_imitation.envs.wrappers import NetEase214Wrapper
+from grf_imitation.envs.wrappers import NetEaseWrapper
 
 def make_env(env_name: str='malib-5vs5', env_config: Dict={}):
 
@@ -28,7 +28,7 @@ def make_env(env_name: str='malib-5vs5', env_config: Dict={}):
     env.seed(seed)
     env.action_space.seed(seed)
 
-    env = NetEase214Wrapper(env, env_config)
+    env = NetEaseWrapper(env, env_config)
 
     if isinstance(env.action_space, Box):
         env = ClipAction(env)

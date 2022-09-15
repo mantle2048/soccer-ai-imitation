@@ -73,18 +73,16 @@ class AimLogger(Logger):
         assert len(n_video_frames.shape) == 5, "Need [N, T, C, H, W] input tensor for video logging!"
         aim_images = []
         for idx, video_frames in enumerate(n_video_frames):
-            caption = f'{name}-{step_}-{idx}.mp4'
+            caption = f'{name}-{step_}-{idx}-{context[idx]}.mp4'
             video_log_path = osp.join(self._video_log_dir, caption)
             utils.write_mp4(video_log_path, video_frames, fps=fps)
-            # aim_image = aim.Image(image=video_log_path, caption=caption, format='mp4')
-            # aim_images.append(aim_image)
-        # self._aim_run.track(value=aim_images, name=name, step=step_, context=context)
 
     def log_paths_as_videos(self, paths, step, fps=20, video_title='video'):
 
         # reshape the rollouts
         # videos = [np.transpose(p['image_obs'], [0, 1, 2, 3]) for p in paths]
         videos = [p['img_obs'] for p in paths]
+        scores = [f'score>>{p.info.score_reward.sum()}' for p in paths]
 
         # max rollout length
         max_videos_to_save = len(videos)
@@ -104,7 +102,7 @@ class AimLogger(Logger):
         if self._video_log_dir is None:
             self._video_log_dir = osp.join(self._snapshot_dir, 'video')
             mkdir_p(self._video_log_dir)
-        self.log_video(videos, video_title, step, fps=fps)
+        self.log_video(videos, video_title, step, fps=fps, context=scores)
 
     def log_figure(self, figure, name, step, context=None, dpi=300):
         """figure: matplotlib.pyplot figure handle"""

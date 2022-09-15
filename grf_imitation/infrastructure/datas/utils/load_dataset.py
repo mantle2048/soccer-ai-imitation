@@ -11,5 +11,5 @@ def load_grf_dataset(expert: str) -> 'ReplayBuffer':
     with h5py.File(dataset_path, 'r') as f:
         data_dict = from_hdf5(f)
     return ReplayBuffer.from_data(
-        obs=data_dict['obs'], act=data_dict['act']
+        obs=data_dict['obs'][:720000], act=data_dict['act'][:720000]
     )

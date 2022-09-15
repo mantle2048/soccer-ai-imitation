@@ -241,6 +241,8 @@ class ReplayBuffer:
         self,
         batch: Batch,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+
+        batch.pop('info')
         for step in batch:
             result = self.add(step)
         return result

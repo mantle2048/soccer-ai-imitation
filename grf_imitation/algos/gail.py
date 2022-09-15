@@ -53,9 +53,19 @@ class GAILAgent(PPOAgent):
             elif k in ('act', 'rew', 'ep_rew'):
                 batch[k] = batch[k].T.flatten()
             elif k in ('done', 'eps_id', 'ep_len', 'terminal', 'truncated'):
-                batch[k] = np.tile(batch[k], 4)
+                batch[k] = np.tile(batch[k], n_player)
+            elif k == 'info':
+                for j in batch[k].keys():
+                    batch[k][j] = np.tile(batch[k][j], n_player)
         if self.config['score_cut']:
-            indices = np.nonzero(batch.rew)
+
+            # score cut
+            indices = np.nonzero(batch.rew)[0]
             batch.done[indices] = True
             batch.terminal[indices] = True
+
+            # game mode cut
+            indices = np.nonzero(batch.info.game_mode_changed)[0]
+            batch.terminal[indices] = True
+            
         return batch
