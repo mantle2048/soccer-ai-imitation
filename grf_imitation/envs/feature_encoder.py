@@ -218,11 +218,6 @@ class MyFeatureEncoder:
         player_speed = np.linalg.norm(player_direction)
         player_tired = obs["left_team_tired_factor"][player_num]
 
-        # player_role = obs["left_team_roles"][player_num]
-        # player_role_onehot = self._encode_role_onehot(player_role)
-        # is_dribbling = obs["left_agent_sticky_actions"][player_num - 1][9]
-        # is_sprinting = obs["left_agent_sticky_actions"][player_num - 1][8]
-
         player_sticky_act = obs["sticky_actions"]
 
         game_mode = obs['game_mode']

@@ -17,7 +17,7 @@ class GAILPolicy(PPOPolicy):
                 input_size=self.obs_dim,
                 output_size=self.act_dim,
                 layers=self.layers,
-                activation=self.activation
+                activation='relu',
                 )
         self.disc_net.to(ptu.device)
         self.disc_net.apply(ptu.init_weights)
