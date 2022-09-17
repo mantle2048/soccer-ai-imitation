@@ -1,2 +1,2 @@
-# grf_imitation
-A collection of IL papers reproduced by mantle 2048
+# Soccer AI Imitation
+Imitate specific soccer ai goal style
