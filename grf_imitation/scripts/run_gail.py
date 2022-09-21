@@ -16,7 +16,6 @@ def get_parser():
     # GRF config
     parser.add_argument('--opponent', type=str, default='buildin')
     parser.add_argument('--score-cut', action='store_true')
-    parser.add_argument('--extra-buildin-act', action='store_true')
 
     # PPO config
     parser.add_argument('--buffer-size', type=int, default=5000)
@@ -100,7 +99,7 @@ def get_config(args: argparse.Namespace) -> Dict:
 def main():
 
     parser = get_parser()
-    args = parser.parse_args([])
+    args = parser.parse_args()
 
     # convert to dictionary
     agent_config = get_config(args)

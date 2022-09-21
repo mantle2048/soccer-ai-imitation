@@ -16,10 +16,7 @@ class NetEaseWrapper(gym.Wrapper):
         self.feature_encoder = MyFeatureEncoder()
 
         # action process
-        if env_config.get('extra_buildin_act'):
-            self.action_space = gym.spaces.Discrete(20) # add build-ai action
-        else:
-            self.action_space = gym.spaces.Discrete(19) # remove build-ai action
+        self.action_space = gym.spaces.Discrete(19) # remove build-ai action
 
         # choose the opponent
         self.opponent = env_config.get('opponent')

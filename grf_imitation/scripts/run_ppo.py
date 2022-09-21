@@ -10,7 +10,6 @@ def get_parser():
 
     parser.add_argument('--opponent', type=str, default='buildin')
     parser.add_argument('--score-cut', action='store_true')
-    parser.add_argument('--extra-buildin-act', action='store_true')
 
     parser.add_argument('--env-name', type=str, default='CartPole-v1')
     parser.add_argument('--no-gpu', action='store_true')

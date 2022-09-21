@@ -61,12 +61,8 @@ if __name__ == '__main__':
         '--lr-schedule',
         'Pi: [[0, 1.0], [10000, 0.1]]; \
          Disc: [[0, 1.0], [10000, 0.1]]',
-        # '--extra-buildin-act',
-        # '--obs-norm',
         '--ret-norm',
         '--adv-norm',
-        # '--recompute-adv',
-
     ])
 
     # convert to dictionary
