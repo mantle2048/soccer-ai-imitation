@@ -21,8 +21,6 @@ python3 'grf_imitation/scripts/run_gail.py' \
         --entropy-coeff  '0.01' \
         --layers 64 64 \
         --activation 'tanh' \
-        --opponent  'selfplay' \
-        --score-cut \
         --lr-schedule 'Pi: [[0, 1.0], [10000, 0.1]];Disc: [[0, 1.0], [10000, 0.1]]' \
         --ret-norm \
         --adv-norm

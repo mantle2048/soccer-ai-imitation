@@ -57,15 +57,13 @@ class GAILAgent(PPOAgent):
             elif k == 'info':
                 for j in batch[k].keys():
                     batch[k][j] = np.tile(batch[k][j], n_player)
-        if self.config['score_cut']:
+        # score cut
+        indices = np.nonzero(batch.rew)[0]
+        batch.done[indices] = True
+        batch.terminal[indices] = True
 
-            # score cut
-            indices = np.nonzero(batch.rew)[0]
-            batch.done[indices] = True
-            batch.terminal[indices] = True
-
-            # game mode cut
-            indices = np.nonzero(batch.info.game_mode_changed)[0]
-            batch.terminal[indices] = True
+        # game mode cut
+        indices = np.nonzero(batch.info.game_mode_changed)[0]
+        batch.terminal[indices] = True
             
         return batch

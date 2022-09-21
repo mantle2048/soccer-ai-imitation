@@ -20,7 +20,7 @@ if __name__ == '__main__':
         '--which-gpu',
         '0',
         '--expert',
-        'football-bilibili-win-simple',
+        'football-bilibili-win',
         '--env-name',
         'malib-5vs5',
         '--seed',
@@ -55,9 +55,6 @@ if __name__ == '__main__':
         '64','64',
         '--activation',
         'tanh',
-        '--opponent',
-        'selfplay',
-        '--score-cut',
         '--lr-schedule',
         'Pi: [[0, 1.0], [10000, 0.1]]; \
          Disc: [[0, 1.0], [10000, 0.1]]',

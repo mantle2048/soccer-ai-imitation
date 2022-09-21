@@ -18,15 +18,6 @@ class NetEaseWrapper(gym.Wrapper):
         # action process
         self.action_space = gym.spaces.Discrete(19) # remove build-ai action
 
-        # choose the opponent
-        self.opponent = env_config.get('opponent')
-        assert self.opponent in (
-            'buildin',
-            'random',
-            'static',
-            'selfplay',
-        ), f"Not Supported AI type: {self.opponent}"
-
         # step set
         self.max_episode_steps = 3000
         self._step = 0
@@ -55,21 +46,13 @@ class NetEaseWrapper(gym.Wrapper):
 
     def action(self, action):
         act = action.flatten()[:4]
-        if self.opponent == 'buildin':
-            oppo_act = np.array([19, 19, 19, 19])
-        elif self.opponent == 'random':
-            oppo_act = np.random.randint(0, 19, (4,))
-        elif self.opponent == 'selfplay':
-            oppo_act = action.flatten()[4:]
-        else:
-            # static opponent
-            oppo_act = np.array([0, 0, 0, 0])
+        oppo_act = action.flatten()[4:]
         return np.concatenate([act, oppo_act])
 
     def observation(self, observation: List[Dict]) -> np.ndarray:
         obs_list = []
         for idx, obs_raw in enumerate(observation):
-            obs_dict = self.feature_encoder.encoder('simple', obs_raw, idx)[0]
+            obs_dict = self.feature_encoder.encoder(obs_raw, idx)[0]
             obs = np.hstack([np.array(obs_dict[k], dtype=np.float32).flatten() for k in obs_dict])
             obs_list.append(obs)
         return np.array(obs_list)

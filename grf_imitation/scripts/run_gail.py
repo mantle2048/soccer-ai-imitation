@@ -13,10 +13,6 @@ def get_parser():
     parser.add_argument('--disc-update-num', type=int, default=2)
     parser.add_argument('--expert', type=str, default='football-bilibili-win')
 
-    # GRF config
-    parser.add_argument('--opponent', type=str, default='buildin')
-    parser.add_argument('--score-cut', action='store_true')
-
     # PPO config
     parser.add_argument('--buffer-size', type=int, default=5000)
     parser.add_argument('--env-name', type=str, default='CartPole-v1')
@@ -83,7 +79,6 @@ def get_config(args: argparse.Namespace) -> Dict:
         'env_name': args.env_name,
         'obs_norm': args.obs_norm,
         'seed': args.seed,
-        'opponent': args.opponent,
     }
 
     agent_config = vars(args)
@@ -109,8 +104,7 @@ def main():
     ################
 
     rl_trainer = RL_Trainer(agent_config)
-    rl_trainer.run_training_loop(n_itr=1)
-
+    rl_trainer.run_training_loop(n_itr=agent_config['n_itr'])
 
 if __name__ == '__main__':
     main()

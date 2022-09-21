@@ -8,9 +8,6 @@ from grf_imitation.algos import PPOAgent
 def get_parser():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--opponent', type=str, default='buildin')
-    parser.add_argument('--score-cut', action='store_true')
-
     parser.add_argument('--env-name', type=str, default='CartPole-v1')
     parser.add_argument('--no-gpu', action='store_true')
     parser.add_argument('--which-gpu', default=0)
@@ -74,7 +71,6 @@ def get_config(args: argparse.Namespace) -> Dict:
         'env_name': args.env_name,
         'obs_norm': args.obs_norm,
         'seed': args.seed,
-        'opponent': args.opponent,
     }
 
     agent_config = vars(args)

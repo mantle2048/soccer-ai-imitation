@@ -73,7 +73,6 @@ class RL_Trainer(object):
         self.logger.log(f"Env: {self.agent.env}", with_prefix=False)
         self.logger.log(f"Observation Dim: {obs_dim}", with_prefix=False)
         self.logger.log(f"Action Dim: {act_dim}", with_prefix=False)
-        self.logger.log(f"Using {config.get('opponent').capitalize()} AI Opponent!", with_prefix=False)
         self.logger.log(f"Agent: {self.agent.policy}", with_prefix=False)
         self.logger.log(f"Lr Scheduler: {self.agent.lr_schedulers}", with_prefix=False)
 

@@ -203,13 +203,7 @@ class MyFeatureEncoder:
 
         return left_offside, right_offside
 
-    def encoder(self, mode, *args,**kwargs):
-        if mode == 'complex':
-            return self.encoder_complex(*args, **kwargs)
-        elif mode == 'simple':
-            return self.encoder_simple(*args, **kwargs)
-
-    def encoder_simple(self, obs: Dict, idx: int):
+    def encoder(self, obs, idx):
 
         idx_onehot = np.zeros(8)
         idx_onehot[idx] = 1

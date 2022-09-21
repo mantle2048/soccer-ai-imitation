@@ -6,7 +6,7 @@ from grf_imitation.envs.feature_encoder import MyFeatureEncoder
 
 
 if __name__ == '__main__':
-    env = make_env(env_config={'opponent': 'random'})
+    env = make_env()
     obs = env.reset()
     # img_obss = []
     # img_obss.append(env.render(mode='rgb_array'))
