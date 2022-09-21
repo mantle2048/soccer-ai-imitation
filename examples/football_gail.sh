@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+python3 'grf_imitation/scripts/run_gail.py' \
+        --disc-lr '3e-4' \
+        --disc-update-num 2 \
+        --which-gpu 0 \
+        --expert 'football-bilibili-win' \
+        --env-name 'malib-5vs5' \
+        --seed 2 \
+        --n-itr 30000 \
+        --num-workers 10 \
+        --step-per-itr 1000 \
+        --buffer-size 8000 \
+        --repeat-per-itr 20 \
+        --batch-size 800 \
+        --tabular-log-freq 10 \
+        --param-log-freq 1000 \
+        --video-log-freq 1000 \
+        --gamma '0.993' \
+        --gae-lambda '0.98' \
+        --lr '1e-3' \
+        --entropy-coeff  '0.01' \
+        --layers 64 64 \
+        --activation 'tanh' \
+        --opponent  'selfplay' \
+        --score-cut \
+        --lr-schedule 'Pi: [[0, 1.0], [10000, 0.1]];Disc: [[0, 1.0], [10000, 0.1]]' \
+        --ret-norm \
+        --adv-norm
