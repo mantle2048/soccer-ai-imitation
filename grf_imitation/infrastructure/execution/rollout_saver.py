@@ -97,7 +97,7 @@ class RolloutSaver:
             self._shelf[str(self._episodes)] = convert_batch_to_dict(batch, ignore_keys=['img_obs'])
         self._episodes += 1
         if self._progressfile:
-            log_str = f"episode reward: {batch.rew.sum()}\t" + self._get_progress() + "\n"
+            log_str = f"episode reward: {batch.rew[:, :4].sum() // 4}\t" + self._get_progress() + "\n"
             print(log_str)
             self._progressfile.write(log_str)
             self._progressfile.flush()

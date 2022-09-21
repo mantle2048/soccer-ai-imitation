@@ -12,7 +12,7 @@ class NetEaseWrapper(gym.Wrapper):
 
         # observation process
         self.observation_space =  \
-            Box(low=-np.inf, high=np.inf, shape=(35,), dtype=np.float32)
+            Box(low=-np.inf, high=np.inf, shape=(39,), dtype=np.float32)
         self.feature_encoder = MyFeatureEncoder()
 
         # action process
@@ -72,7 +72,7 @@ class NetEaseWrapper(gym.Wrapper):
     def observation(self, observation: List[Dict]) -> np.ndarray:
         obs_list = []
         for idx, obs_raw in enumerate(observation):
-            obs_dict = self.feature_encoder.encoder(obs_raw, idx)[0]
+            obs_dict = self.feature_encoder.encoder('simple', obs_raw, idx)[0]
             obs = np.hstack([np.array(obs_dict[k], dtype=np.float32).flatten() for k in obs_dict])
             obs_list.append(obs)
         return np.array(obs_list)

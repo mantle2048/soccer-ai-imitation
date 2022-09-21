@@ -10,10 +10,10 @@ from grf_imitation.user_config import LOCAL_DIR
 parser = create_parser()
 args = parser.parse_args([
     '--exp-dir',
-    'data/gail_malib-5vs5/gail_malib-5vs5_5',
+    'data/gail_malib-5vs5/gail_malib-5vs5_0',
     '--track-progress',
     '--episodes',
-    '3',
+    '10',
     '--render'
 ])
 print(vars(args))

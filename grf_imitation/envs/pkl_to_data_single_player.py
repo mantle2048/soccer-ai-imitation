@@ -12,8 +12,7 @@
 #       ball_owned_by_us: 1 dim   #
 #       ball_owned_by_me: 1 dim   #
 #       offside: 1 dim            #
-#       step_left: 1 dim          #
-#       total: 36 dim             #
+#       total: 35 dim             #
 ###################################
 import copy
 import os
@@ -225,7 +224,13 @@ class MyFeatureEncoder:
 
         return obs_reverse
 
-    def encoder(self, obs: Dict, idx: int):
+    def encoder(self, mode, *args,**kwargs):
+        if mode == 'complex':
+            return self.encoder_complex(*args, **kwargs)
+        elif mode == 'simple':
+            return self.encoder_simple(*args, **kwargs)
+
+    def encoder_simple(self, obs: Dict, idx: int):
         idx_onehot = np.zeros(8)
         idx_onehot[idx] = 1
 
@@ -234,22 +239,46 @@ class MyFeatureEncoder:
         elif 4 <= idx < 8:
             player_num = idx - 4 + 1
 
+        # pos
         player_pos = obs["left_team"][player_num]
-        player_direction = np.array(obs["left_team_direction"][player_num])
-        player_speed = np.linalg.norm(player_direction)
+        relative2goal_pos = obs['left_team'] - np.array([1.0, 0.0])
+        relative2goal_distance = np.linalg.norm(
+            relative2goal_pos, axis=1, keepdims=True)
+        cloest2goal_num = relative2goal_distance.argmin()
+
+        teammate_pos = (obs['left_team'] - player_pos)[cloest2goal_num]
+        
+        relative2me_pos = obs['right_team'] - player_pos
+        relative2me_distance = np.linalg.norm(
+            relative2goal_pos, axis=1, keepdims=True)
+        cloest2me_num = relative2me_distance.argmin()
+
+        opponent_pos = (obs['right_team'] - player_pos)[cloest2me_num]
+        pos_state = np.concatenate(
+            [player_pos, teammate_pos, opponent_pos], axis = 0
+        )
+
+        # dir
+        player_dir = obs["left_team_direction"][player_num]
+        teammate_dir = (obs['left_team_direction'] - player_dir)[cloest2goal_num]
+        opponent_dir = (obs['right_team_direction'] - player_dir)[cloest2me_num]
+        dir_state = np.concatenate(
+            [player_dir, teammate_dir, opponent_dir], axis = 0
+        )
+
+        # player_state
+        player_speed = np.linalg.norm(player_dir)
         player_tired = obs["left_team_tired_factor"][player_num]
+        left_offside, right_offside = self.get_offside(obs)
+        player_offside = left_offside[player_num]
+        player_state = np.array([player_speed, player_tired, player_offside])
 
-        # player_role = obs["left_team_roles"][player_num]
-        # player_role_onehot = self._encode_role_onehot(player_role)
-        # is_dribbling = obs["left_agent_sticky_actions"][player_num - 1][9]
-        # is_sprinting = obs["left_agent_sticky_actions"][player_num - 1][8]
-
-        player_sticky_act = obs["left_agent_sticky_actions"][player_num - 1]
-
+        # game mode
         game_mode = obs['game_mode']
         game_mode_onehot = np.zeros(7)
         game_mode_onehot[game_mode] = 1
 
+        # ball state
         ball_owned = 0.0
         if obs["ball_owned_team"] == -1:
             ball_owned = 0.0
@@ -260,31 +289,130 @@ class MyFeatureEncoder:
         if obs["ball_owned_team"] == 0:
             ball_owned_by_us = 1.0
 
-        ball_owned_by_me = 0.0
-        if ball_owned_by_us and obs['ball_owned_player'] == player_num:
-            ball_owned_by_me = 1.0
+        ball_x, ball_y, ball_z = obs["ball"]
+        ball_x_relative = ball_x - player_pos[0]
+        ball_y_relative = ball_y - player_pos[1]
+        ball_x_speed, ball_y_speed, _ = obs["ball_direction"]
+        ball_distance = np.linalg.norm([ball_x_relative, ball_y_relative])
+        ball_speed = np.linalg.norm([ball_x_speed, ball_y_speed])
 
+        ball_state = np.concatenate(
+            (
+                np.array([ball_x_relative, ball_y_relative]),
+                np.array([obs["ball_direction"][0] * 20, obs["ball_direction"][1] * 20, obs["ball_direction"][2] * 5]),
+                np.array(
+                    [ball_speed * 20, ball_distance, ball_owned, ball_owned_by_us]
+                ),
+            )
+        )
+
+        state_dict = {
+            'idx': idx_onehot,
+            'pos': pos_state,
+            'direction': dir_state * 100,
+            'player_state': player_state,
+            'game_mode': game_mode_onehot,
+            'ball_state': ball_state,
+        }
+        return state_dict, {}
+
+    def encoder_complex(self, obs: Dict, idx: int):
+        idx_onehot = np.zeros(8)
+        idx_onehot[idx] = 1
+
+        if idx < 4:
+            player_num = idx + 1
+        elif 4 <= idx < 8:
+            player_num = idx - 4 + 1
+
+        # pos
+        player_pos = obs["left_team"][player_num]
+        others_pos = np.concatenate(
+            [np.delete(obs["left_team"], player_num, axis=0), obs['right_team']],
+            axis=0)
+        relative_pos = others_pos - player_pos
+        pos_state = np.concatenate([player_pos[None, :], others_pos], axis=0)
+
+        # dir
+        player_dir = np.array(obs["left_team_direction"][player_num])
+        others_dir = np.concatenate(
+            [np.delete(obs["left_team_direction"], player_num, axis=0), obs['right_team_direction']],
+            axis=0)
+        relative_dir = others_dir - player_dir
+        dir_state = np.concatenate([player_dir[None, :], others_dir], axis=0)
+
+        # player_state
+        player_speed = np.linalg.norm(player_dir)
+        player_tired = obs["left_team_tired_factor"][player_num]
         left_offside, right_offside = self.get_offside(obs)
-        offside = left_offside[player_num]
+        player_offside = left_offside[player_num]
 
-        steps_left = obs['steps_left'] / 3000  # steps left till end
+        # sticky action
+        player_sticky_act = obs["left_agent_sticky_actions"][player_num - 1]
+
+        # game mode
+        game_mode = obs['game_mode']
+        game_mode_onehot = np.zeros(7)
+        game_mode_onehot[game_mode] = 1
+
+        # ball state
+        ball_owned = 0.0
+        if obs["ball_owned_team"] == -1:
+            ball_owned = 0.0
+        else:
+            ball_owned = 1.0
+
+        ball_owned_by_us = 0.0
+        if obs["ball_owned_team"] == 0:
+            ball_owned_by_us = 1.0
+
+        # ball_owned_by_me = 0.0
+        # if ball_owned_by_us and obs['ball_owned_player'] == player_num:
+        #     ball_owned_by_me = 1.0
+
+        ball_x, ball_y, ball_z = obs["ball"]
+        ball_x_relative = ball_x - player_pos[0]
+        ball_y_relative = ball_y - player_pos[1]
+        ball_x_speed, ball_y_speed, _ = obs["ball_direction"]
+        ball_distance = np.linalg.norm([ball_x_relative, ball_y_relative])
+        ball_speed = np.linalg.norm([ball_x_speed, ball_y_speed])
+
+        ball_state = np.concatenate(
+            (
+                np.array([ball_x_relative, ball_y_relative]),
+                np.array([obs["ball_direction"][0] * 20, obs["ball_direction"][1] * 20, obs["ball_direction"][2] * 5]),
+                np.array(
+                    [ball_speed * 20, ball_distance, ball_owned, ball_owned_by_us]
+                ),
+            )
+        )
+
+        # steps_left = obs['steps_left'] / 3000  # steps left till end
 
         # score_ratio = 1.0 * (obs['score'][0] - obs['score'][1])
         # score_ratio /= 5.0
         # score_ratio = min(score_ratio, 1.0)
         # score_ratio = max(-1.0, score_ratio)
 
+        # ball_x, ball_y, ball_z = obs["ball"]
+        # ball_x_relative = ball_x - player_pos_x
+        # ball_y_relative = ball_y - player_pos_y
+        # ball_x_speed, ball_y_speed, _ = obs["ball_direction"]
+        # ball_distance = np.linalg.norm([ball_x_relative, ball_y_relative])
+        # ball_speed = np.linalg.norm([ball_x_speed, ball_y_speed])
+
+        # ball_which_zone = self._encode_ball_which_zone(ball_x, ball_y)
+
         state_dict = {
             'idx': idx_onehot,
-            'pos': player_pos,
-            'direction': player_direction * 100,
+            'pos': pos_state,
+            'direction': dir_state * 100,
             'speed': [player_speed * 100],
             'tired': [player_tired],
-            'offside': [offside],
+            'offside': [player_offside],
             'game_mode': game_mode_onehot,
             'sticky_action': player_sticky_act,
-            'ball_state': [ball_owned, ball_owned_by_us, ball_owned_by_me],
-            'steps_left': steps_left,
+            'ball_state': ball_state,
         }
         return state_dict, {}
 
@@ -525,16 +653,15 @@ def pkl2npz(pkl_dir: Dict):
                 obs_list = []
                 for i in range(4):
                     player_obs_dict = \
-                        feature_encoder.encoder(bilibili_obs_dict, i)[0]
+                        feature_encoder.encoder('simple', bilibili_obs_dict, i)[0]
                     player_obs = \
                         concate_observation_from_raw_no_sort(player_obs_dict)
                     obs_list.append(player_obs)
                 for i in range(4, 8):
                     player_obs_dict = \
-                        feature_encoder.encoder(opponent_obs_dict, i)[0]
+                        feature_encoder.encoder('simple', opponent_obs_dict, i)[0]
                     player_obs = \
                         concate_observation_from_raw_no_sort(player_obs_dict)
-                    import ipdb; ipdb.set_trace()
                     obs_list.append(player_obs)
                 obss.extend(obs_list)
                 acts.extend(act_list)
@@ -548,6 +675,6 @@ def pkl2npz(pkl_dir: Dict):
 
 
 if __name__ == '__main__':
-    pkl_dir = osp.join(os.getcwd(), 'video/win_pkl')
+    pkl_dir = osp.join(os.getcwd(), 'data/win_pkl')
     assert 'win' in pkl_dir
     pkl2npz(pkl_dir)

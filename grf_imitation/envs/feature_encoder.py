@@ -203,7 +203,13 @@ class MyFeatureEncoder:
 
         return left_offside, right_offside
 
-    def encoder(self, obs: Dict, idx: int):
+    def encoder(self, mode, *args,**kwargs):
+        if mode == 'complex':
+            return self.encoder_complex(*args, **kwargs)
+        elif mode == 'simple':
+            return self.encoder_simple(*args, **kwargs)
+
+    def encoder_simple(self, obs: Dict, idx: int):
 
         idx_onehot = np.zeros(8)
         idx_onehot[idx] = 1
@@ -213,17 +219,49 @@ class MyFeatureEncoder:
         elif 4 <= idx < 8:
             player_num = idx - 4 + 1
 
+        # pos
         player_pos = obs["left_team"][player_num]
-        player_direction = np.array(obs["left_team_direction"][player_num])
-        player_speed = np.linalg.norm(player_direction)
+        relative2goal_pos = obs['left_team'] - np.array([1.0, 0.0])
+        relative2goal_distance = np.linalg.norm(
+            relative2goal_pos, axis=1, keepdims=True)
+        cloest2goal_num = relative2goal_distance.argmin()
+
+        teammate_pos = (obs['left_team'] - player_pos)[cloest2goal_num]
+        
+        relative2me_pos = obs['right_team'] - player_pos
+        relative2me_distance = np.linalg.norm(
+            relative2goal_pos, axis=1, keepdims=True)
+        cloest2me_num = relative2me_distance.argmin()
+
+        opponent_pos = (obs['right_team'] - player_pos)[cloest2me_num]
+        pos_state = np.concatenate(
+            [player_pos, teammate_pos, opponent_pos], axis = 0
+        )
+
+        # dir
+        player_dir = obs["left_team_direction"][player_num]
+        teammate_dir = (obs['left_team_direction'] - player_dir)[cloest2goal_num]
+        opponent_dir = (obs['right_team_direction'] - player_dir)[cloest2me_num]
+        dir_state = np.concatenate(
+            [player_dir, teammate_dir, opponent_dir], axis = 0
+        )
+
+        # player_state
+        player_speed = np.linalg.norm(player_dir)
         player_tired = obs["left_team_tired_factor"][player_num]
+        left_offside, right_offside = self.get_offside(obs)
+        player_offside = left_offside[player_num]
+        player_state = np.array([player_speed, player_tired, player_offside])
 
-        player_sticky_act = obs["sticky_actions"]
+        # sticky action
+        # player_sticky_act = obs["sticky_actions"]
 
+        # game mode
         game_mode = obs['game_mode']
         game_mode_onehot = np.zeros(7)
         game_mode_onehot[game_mode] = 1
 
+        # ball state
         ball_owned = 0.0
         if obs["ball_owned_team"] == -1:
             ball_owned = 0.0
@@ -234,25 +272,33 @@ class MyFeatureEncoder:
         if obs["ball_owned_team"] == 0:
             ball_owned_by_us = 1.0
 
-        ball_owned_by_me = 0.0
-        if ball_owned_by_us and obs['ball_owned_player'] == player_num:
-            ball_owned_by_me = 1.0
+        # ball_owned_by_me = 0.0
+        # if ball_owned_by_us and obs['ball_owned_player'] == player_num:
+        #     ball_owned_by_me = 1.0
 
-        left_offside, right_offside = self.get_offside(obs)
-        offside = left_offside[player_num]
+        ball_x, ball_y, ball_z = obs["ball"]
+        ball_x_relative = ball_x - player_pos[0]
+        ball_y_relative = ball_y - player_pos[1]
+        ball_x_speed, ball_y_speed, _ = obs["ball_direction"]
+        ball_distance = np.linalg.norm([ball_x_relative, ball_y_relative])
+        ball_speed = np.linalg.norm([ball_x_speed, ball_y_speed])
 
-        # steps_left = obs['steps_left'] / 3000  # steps left till end
-
+        ball_state = np.concatenate(
+            (
+                np.array([ball_x_relative, ball_y_relative]),
+                np.array([obs["ball_direction"][0] * 20, obs["ball_direction"][1] * 20, obs["ball_direction"][2] * 5]),
+                np.array(
+                    [ball_speed * 20, ball_distance, ball_owned, ball_owned_by_us]
+                ),
+            )
+        )
         state_dict = {
             'idx': idx_onehot,
-            'pos': player_pos,
-            'direction': player_direction * 100,
-            'speed': [player_speed * 100],
-            'tired': [player_tired],
-            'offside': [offside],
+            'pos': pos_state,
+            'direction': dir_state * 100,
+            'player_state': player_state,
             'game_mode': game_mode_onehot,
-            'sticky_action': player_sticky_act,
-            'ball_state': [ball_owned, ball_owned_by_us, ball_owned_by_me],
+            'ball_state': ball_state,
         }
         return state_dict, {}
 
