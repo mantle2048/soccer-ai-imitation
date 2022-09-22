@@ -3,6 +3,7 @@
 Run the following code to clone the project and setup the package
 ```bash
 git clone https://github.com/mantle2048/soccer-ai-imitation
+cd soccer-ai-imitation
 pip install -e .
 ```
 Run the following code in current directory to create the folder and place the hdf5 dataset in `.grf/datasets`
