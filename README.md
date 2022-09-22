@@ -1,6 +1,6 @@
 ## Soccer AI imitation with specific goal style (based on GRF 5v5 environment)
 ### **Tip:**
-Run the following code to clone the project and setup the package
+Run the following code to clone the project and setup
 ```bash
 git clone https://github.com/mantle2048/soccer-ai-imitation
 cd soccer-ai-imitation
